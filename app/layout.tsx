@@ -9,8 +9,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Stryktipset Pool',
-  description: 'Group betting made easy - pool your Stryktipset bets with friends',
+  title: 'Strykbygget',
+  description: 'Bygg ditt stryk!',
   generator: 'v0.app',
   icons: {
     icon: [

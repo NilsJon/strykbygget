@@ -174,8 +174,7 @@ export function SubmittedTickets({ tickets, matches }: SubmittedTicketsProps) {
                 {/* Matches */}
                 <div className="rounded-xl overflow-hidden border border-border">
                   <div className="grid grid-cols-[1fr,auto] bg-secondary/50">
-                    <div className="px-4 py-3 font-semibold text-foreground">Match</div>
-                    <div className="px-4 py-3 font-semibold text-foreground text-center w-36">Val</div>
+                    <div className="px-4 py-3 font-semibold text-foreground">Val</div>
                   </div>
                   {matches.map((match, index) => {
                     const selection = viewingTicket.selections[index];
