@@ -1,14 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
-import { BudgetBar } from "@/components/budget-bar";
 import { TicketForm } from "@/components/ticket-form";
 import { SubmittedTickets } from "@/components/submitted-tickets";
 import { FinalResult } from "@/components/final-result";
-import { useBetting } from "@/lib/betting-context";
-import type { Room, TicketSelection } from "@/lib/types";
-import { getRemainingBudget } from "@/lib/types";
-import { ArrowLeft, Users, Wallet } from "lucide-react";
+import type { Room } from "@/lib/types";
+import { ArrowLeft, Users, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface RoomViewProps {
@@ -16,17 +12,7 @@ interface RoomViewProps {
   onBack: () => void;
 }
 
-export function RoomView({ room: initialRoom, onBack }: RoomViewProps) {
-  const { rooms, submitTicket } = useBetting();
-  
-  // Get the live room data from context
-  const room = rooms[initialRoom.id] || initialRoom;
-  const remainingBudget = useMemo(() => getRemainingBudget(room), [room]);
-  const totalSpent = room.totalBudget - remainingBudget;
-
-  const handleSubmitTicket = (playerName: string, selections: TicketSelection[]) => {
-    submitTicket(room.id, playerName, selections);
-  };
+export function RoomView({ room, onBack }: RoomViewProps) {
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,28 +27,26 @@ export function RoomView({ room: initialRoom, onBack }: RoomViewProps) {
               className="text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              Tillbaka
             </Button>
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Users className="h-4 w-4" />
-                <span>{room.tickets.length} tickets</span>
+                <span>{room.tickets.length} kuponger</span>
               </div>
               <div className="flex items-center gap-2 text-primary">
-                <span>{"💰"}</span>
-                <span className="font-semibold">{remainingBudget} kr left to deploy</span>
+                <Target className="h-4 w-4" />
+                <span className="font-semibold">Mål: {room.targetCost} kr</span>
               </div>
             </div>
           </div>
-          
-          <div className="mb-4">
-            <h1 className="text-2xl font-bold text-foreground">{room.name}</h1>
+
+          <div className="mb-4 text-center">
+            <h1 className="text-2xl font-bold text-foreground break-words">{room.name}</h1>
             <p className="text-muted-foreground">
-              {room.matches.length} matches &middot; {room.pricePerCombination} kr per combo
+              {room.matches.length} matcher &middot; Alla kuponger måste kosta exakt {room.targetCost} kr
             </p>
           </div>
-
-          <BudgetBar total={room.totalBudget} remaining={remainingBudget} />
         </div>
       </header>
 
@@ -71,31 +55,17 @@ export function RoomView({ room: initialRoom, onBack }: RoomViewProps) {
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Left column - Ticket form */}
           <div>
-            {remainingBudget > 0 ? (
-              <TicketForm
-                room={room}
-                remainingBudget={remainingBudget}
-                onSubmit={handleSubmitTicket}
-              />
-            ) : (
-              <div className="p-6 rounded-2xl bg-card border border-accent/50 text-center">
-                <div className="text-5xl mb-4">{"🎰💰🎰"}</div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">{"All funds deployed! 🚀"}</h3>
-                <p className="text-muted-foreground">
-                  {"Your squad went all in! "}{room.totalBudget}{" kr of pure winning energy. Time to cash out (metaphorically, for now)."}
-                </p>
-              </div>
-            )}
+            <TicketForm room={room} />
           </div>
 
           {/* Right column - Submitted tickets */}
           <div className="space-y-8">
-            <SubmittedTickets tickets={room.tickets} />
+            <SubmittedTickets tickets={room.tickets} matches={room.matches} />
           </div>
         </div>
 
         {/* Final result section */}
-        {remainingBudget === 0 && room.tickets.length > 0 && (
+        {room.tickets.length > 0 && (
           <div className="mt-12">
             <FinalResult room={room} />
           </div>

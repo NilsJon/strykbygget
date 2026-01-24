@@ -18,13 +18,13 @@ export interface Ticket {
   combinations: number;
   cost: number;
   submittedAt: Date;
+  isYours?: boolean; // Whether this ticket belongs to the current user
 }
 
 export interface Room {
   id: string;
   name: string;
-  totalBudget: number;
-  pricePerCombination: number;
+  targetCost: number;
   matches: Match[];
   tickets: Ticket[];
   createdAt: Date;
@@ -32,20 +32,18 @@ export interface Room {
 
 export function calculateCombinations(selections: TicketSelection[]): number {
   if (selections.length === 0) return 0;
-  
+
   return selections.reduce((total, selection) => {
     const count = selection.outcomes.length;
     return total * (count > 0 ? count : 1);
   }, 1);
 }
 
-export function calculateCost(combinations: number, pricePerCombination: number): number {
-  return combinations * pricePerCombination;
-}
-
-export function getRemainingBudget(room: Room): number {
-  const usedBudget = room.tickets.reduce((sum, ticket) => sum + ticket.cost, 0);
-  return room.totalBudget - usedBudget;
+/**
+ * Calculates ticket cost. In Stryktipset, cost = number of combinations (1 SEK per row).
+ */
+export function calculateCost(combinations: number): number {
+  return combinations;
 }
 
 export function generateId(): string {

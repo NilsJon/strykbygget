@@ -3,52 +3,50 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Room, Outcome } from "@/lib/types";
-import { Trophy, ExternalLink, Sparkles } from "lucide-react";
+import type { Room, Outcome, TicketSelection } from "@/lib/types";
+import { Trophy, ExternalLink, Sparkles, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { generateFinalTicket } from "@/lib/tipsLogic";
+import { calculateCombinationsFromArray } from "@/lib/tipsLogic";
 
 interface FinalResultProps {
   room: Room;
 }
 
-type CombinedTicket = {
-  matchId: string;
-  outcomes: Set<Outcome>;
-}[];
-
 export function FinalResult({ room }: FinalResultProps) {
   const [showResult, setShowResult] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const combinedTicket = useMemo((): CombinedTicket => {
-    const combined: Record<string, Set<Outcome>> = {};
-    
-    // Initialize with all matches
-    room.matches.forEach(match => {
-      combined[match.id] = new Set();
-    });
+  const finalTicketData = useMemo(() => {
+    const ticket = generateFinalTicket(room.matches, room.tickets, room.targetCost);
 
-    // Merge all selections from all tickets
-    room.tickets.forEach(ticket => {
-      ticket.selections.forEach(selection => {
-        selection.outcomes.forEach(outcome => {
-          combined[selection.matchId].add(outcome);
-        });
+    if (!ticket) {
+      return null;
+    }
+
+    const combinations = calculateCombinationsFromArray(
+      ticket.map((s) => s.outcomes)
+    );
+
+    // Debug log to verify cost
+    if (typeof window !== "undefined") {
+      console.log("[Final Ticket Debug]", {
+        targetCost: room.targetCost,
+        actualCost: combinations,
+        matches: ticket.map((s) => ({
+          matchId: s.matchId,
+          picks: s.outcomes.length,
+          outcomes: s.outcomes,
+        })),
       });
-    });
+    }
 
-    return room.matches.map(match => ({
-      matchId: match.id,
-      outcomes: combined[match.id],
-    }));
+    return {
+      selections: ticket,
+      combinations,
+      isValid: combinations === room.targetCost,
+    };
   }, [room]);
-
-  const totalCombinations = useMemo(() => {
-    return combinedTicket.reduce((total, match) => {
-      const count = match.outcomes.size;
-      return total * (count > 0 ? count : 1);
-    }, 1);
-  }, [combinedTicket]);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -58,14 +56,30 @@ export function FinalResult({ room }: FinalResultProps) {
     setIsGenerating(false);
   };
 
+  if (!finalTicketData) {
+    return (
+      <Card className="bg-card border-destructive/30 shadow-lg shadow-destructive/10">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl text-foreground flex items-center justify-center gap-2">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+            Kunde inte generera slutgiltig kupong
+          </CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Målkostnaden ({room.targetCost} kr) kan inte uttryckas som 2^a × 3^b.
+            Välj en annan målkostnad (t.ex. 1, 2, 3, 4, 6, 8, 9, 12, 16, 18, 24...).
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   if (!showResult) {
     return (
       <Card className="bg-card border-accent/30 shadow-lg shadow-accent/10">
         <CardHeader className="text-center">
-          <div className="text-5xl mb-4">{"🎰✨🎰"}</div>
-          <CardTitle className="text-2xl text-foreground">{"The moment of truth! 🥁"}</CardTitle>
+          <CardTitle className="text-2xl text-foreground">Sammanställning</CardTitle>
           <CardDescription className="text-muted-foreground">
-            {"All funds deployed. Time to see what your collective genius has created."}
+            Se det kombinerade systemet från alla kuponger
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
@@ -78,20 +92,21 @@ export function FinalResult({ room }: FinalResultProps) {
             {isGenerating ? (
               <>
                 <Sparkles className="mr-2 h-5 w-5 animate-spin" />
-                {"Calculating your fortune..."}
+                Skapar sammanställning...
               </>
             ) : (
               <>
                 <Trophy className="mr-2 h-5 w-5" />
-                {"Reveal the golden ticket 🎫💰"}
+                Visa sammanlagt system
               </>
             )}
           </Button>
-          <p className="text-sm text-muted-foreground">{"(This is gonna be good)"}</p>
         </CardContent>
       </Card>
     );
   }
+
+  const { selections, combinations, isValid } = finalTicketData;
 
   return (
     <Card className="bg-card border-accent/50 shadow-lg shadow-accent/20">
@@ -99,28 +114,41 @@ export function FinalResult({ room }: FinalResultProps) {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-2xl text-foreground flex items-center gap-2">
-              {"🏆💰"} The Golden Ticket {"💰🏆"}
+              Sammanlagt system
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              {"Your squad's masterpiece. Frame it. Treasure it. Cash it. 💎"}
+              Vi väljer majoriteten per match och garderar de mest osäkra matcherna tills vi når målkostnaden.
             </CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Validation warning */}
+        {!isValid && (
+          <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              <p className="font-semibold">Varning: Kostnad matchar inte målet</p>
+            </div>
+            <p className="text-sm mt-1">
+              Beräknad kostnad: {combinations} kr (mål: {room.targetCost} kr)
+            </p>
+          </div>
+        )}
+
         {/* Results grid */}
         <div className="rounded-xl overflow-hidden border border-border">
           <div className="grid grid-cols-[1fr,auto] bg-secondary/50">
             <div className="px-4 py-3 font-semibold text-foreground">Match</div>
-            <div className="px-4 py-3 font-semibold text-foreground text-center w-36">Selection</div>
+            <div className="px-4 py-3 font-semibold text-foreground text-center w-36">Val</div>
           </div>
           {room.matches.map((match, index) => {
-            const selection = combinedTicket.find(s => s.matchId === match.id);
-            const outcomes = selection ? Array.from(selection.outcomes).sort() : [];
-            
+            const selection = selections.find((s) => s.matchId === match.id);
+            const outcomes = selection ? selection.outcomes : [];
+
             return (
-              <div 
-                key={match.id} 
+              <div
+                key={match.id}
                 className={cn(
                   "grid grid-cols-[1fr,auto] border-t border-border",
                   index % 2 === 0 ? "bg-background" : "bg-secondary/20"
@@ -153,17 +181,21 @@ export function FinalResult({ room }: FinalResultProps) {
         </div>
 
         {/* Summary */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div className="p-4 rounded-xl bg-secondary/50 border border-border text-center">
-            <p className="text-sm text-muted-foreground mb-1">{"💰"} Invested</p>
-            <p className="text-2xl font-bold text-primary">{room.totalBudget} kr</p>
+            <p className="text-sm text-muted-foreground mb-1">Kostnad (rader)</p>
+            <p className={cn(
+              "text-2xl font-bold",
+              isValid ? "text-foreground" : "text-destructive"
+            )}>
+              {combinations} kr
+            </p>
+            {isValid && (
+              <p className="text-xs text-muted-foreground mt-1">✓ Exakt målkostnad</p>
+            )}
           </div>
           <div className="p-4 rounded-xl bg-secondary/50 border border-border text-center">
-            <p className="text-sm text-muted-foreground mb-1">{"🎲"} Chances to win</p>
-            <p className="text-2xl font-bold text-foreground">{totalCombinations}</p>
-          </div>
-          <div className="p-4 rounded-xl bg-secondary/50 border border-border text-center">
-            <p className="text-sm text-muted-foreground mb-1">{"👥"} Future millionaires</p>
+            <p className="text-sm text-muted-foreground mb-1">Deltagare</p>
             <p className="text-2xl font-bold text-foreground">{room.tickets.length}</p>
           </div>
         </div>
@@ -176,12 +208,12 @@ export function FinalResult({ room }: FinalResultProps) {
             asChild
           >
             <a href="https://www.svenskaspel.se/stryktipset" target="_blank" rel="noopener noreferrer">
-              {"🚀 Take my money, Svenska Spel! 💸"}
+              Spela på Svenska Spel
               <ExternalLink className="ml-2 h-4 w-4" />
             </a>
           </Button>
           <p className="text-center text-sm text-muted-foreground mt-3">
-            {"🍀 May the odds be ever in your favor 🍀"}
+            Lycka till!
           </p>
         </div>
       </CardContent>

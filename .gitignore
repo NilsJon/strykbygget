@@ -13,6 +13,7 @@
 /out/
 
 .idea/
+.claude/
 
 # production
 /build
