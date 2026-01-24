@@ -139,8 +139,7 @@ export function FinalResult({ room }: FinalResultProps) {
         {/* Results grid */}
         <div className="rounded-xl overflow-hidden border border-border">
           <div className="grid grid-cols-[1fr,auto] bg-secondary/50">
-            <div className="px-4 py-3 font-semibold text-foreground">Match</div>
-            <div className="px-4 py-3 font-semibold text-foreground text-center w-36">Val</div>
+            <div className="px-4 py-3 font-semibold text-foreground">Resultat</div>
           </div>
           {room.matches.map((match, index) => {
             const selection = selections.find((s) => s.matchId === match.id);
