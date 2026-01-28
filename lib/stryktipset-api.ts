@@ -8,6 +8,11 @@ export interface StryktipsetMatch {
   home: string;
   away: string;
   matchStart: string;
+  distribution?: {
+    one: string;
+    x: string;
+    two: string;
+  };
 }
 
 export interface StryktipsetDraw {

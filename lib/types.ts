@@ -4,6 +4,11 @@ export interface Match {
   id: string;
   teamA: string;
   teamB: string;
+  distribution?: {
+    one: string;
+    x: string;
+    two: string;
+  };
 }
 
 export interface TicketSelection {

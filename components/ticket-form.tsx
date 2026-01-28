@@ -201,6 +201,7 @@ export function TicketForm({room, onSubmit}: TicketFormProps) {
                         matchId={match.id}
                         selected={selections[match.id] || []}
                         onChange={(outcomes) => handleOutcomeChange(match.id, outcomes)}
+                        distribution={match.distribution}
                     />
                   </div>
               ))}

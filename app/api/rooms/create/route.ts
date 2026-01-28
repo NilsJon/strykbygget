@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     }
 
     // Validate and transform matches
+    // Note: We intentionally do NOT store distribution as it changes throughout the week
     const firestoreMatches = matches.map((match: any, index: number) => {
       if (!match.home || !match.away) {
         throw new Error(`Match ${index + 1} must have home and away teams`);

@@ -48,6 +48,7 @@ export function CreateRoomForm({onRoomCreated}: CreateRoomFormProps) {
           id: `match-${match.eventNumber}`,
           teamA: match.home,
           teamB: match.away,
+          distribution: match.distribution,
         }));
 
         setMatches(loadedMatches);
@@ -88,6 +89,7 @@ export function CreateRoomForm({onRoomCreated}: CreateRoomFormProps) {
 
     try {
       // Convert UI format to Firestore format
+      // Note: We intentionally do NOT store distribution as it changes throughout the week
       const firestoreMatches = matches.map((match) => ({
         home: match.teamA.trim(),
         away: match.teamB.trim(),

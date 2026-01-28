@@ -6,6 +6,7 @@ import { RoomView } from "@/components/room-view";
 import type { Room, Match, Ticket, TicketSelection } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 import { getClientId } from "@/lib/utils";
+import { fetchCurrentStryktipsetDraw } from "@/lib/stryktipset-api";
 
 // API response types matching Firestore structure
 interface FirestoreMatch {
@@ -48,10 +49,15 @@ export default function RoomPage() {
     const fetchRoom = async () => {
       try {
         const clientId = getClientId();
-        const response = await fetch(`/api/rooms/${roomId}?clientId=${encodeURIComponent(clientId)}`);
 
-        if (!response.ok) {
-          if (response.status === 404) {
+        // Fetch room data and fresh distribution in parallel
+        const [roomResponse, currentDraw] = await Promise.all([
+          fetch(`/api/rooms/${roomId}?clientId=${encodeURIComponent(clientId)}`),
+          fetchCurrentStryktipsetDraw(),
+        ]);
+
+        if (!roomResponse.ok) {
+          if (roomResponse.status === 404) {
             setError("Room not found");
           } else {
             setError("Failed to load room");
@@ -60,14 +66,30 @@ export default function RoomPage() {
           return;
         }
 
-        const data: FirestoreRoom = await response.json();
+        const data: FirestoreRoom = await roomResponse.json();
 
-        // Convert Firestore format to UI format
-        const matches: Match[] = data.matches.map((match, index) => ({
-          id: `match-${index}`,
-          teamA: match.home,
-          teamB: match.away,
-        }));
+        // Create a map of fresh distribution data by team names
+        const distributionMap = new Map<string, { one: string; x: string; two: string }>();
+        if (currentDraw) {
+          currentDraw.matches.forEach((match) => {
+            if (match.distribution) {
+              // Use home-away team combo as key
+              const key = `${match.home}-${match.away}`;
+              distributionMap.set(key, match.distribution);
+            }
+          });
+        }
+
+        // Convert Firestore format to UI format with fresh distribution
+        const matches: Match[] = data.matches.map((match, index) => {
+          const key = `${match.home}-${match.away}`;
+          return {
+            id: `match-${index}`,
+            teamA: match.home,
+            teamB: match.away,
+            distribution: distributionMap.get(key),
+          };
+        });
 
         const tickets: Ticket[] = data.tickets.map((ticket) => {
           const selections: TicketSelection[] = ticket.selections.map(

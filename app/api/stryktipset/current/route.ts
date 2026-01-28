@@ -6,6 +6,11 @@ export interface StryktipsetMatch {
   home: string;
   away: string;
   matchStart: string;
+  distribution?: {
+    one: string;
+    x: string;
+    two: string;
+  };
 }
 
 export interface StryktipsetDraw {
@@ -71,13 +76,40 @@ export async function GET() {
     // Extract matches from draw events
     const matches: StryktipsetMatch[] = currentDraw.drawEvents
       .filter((event: any) => !event.cancelled)
-      .map((event: any) => ({
-        eventNumber: event.eventNumber,
-        eventDescription: event.eventDescription,
-        home: event.match.participants.find((p: any) => p.type === "home")?.name || "",
-        away: event.match.participants.find((p: any) => p.type === "away")?.name || "",
-        matchStart: event.match.matchStart,
-      }))
+      .map((event: any) => {
+        // Get distribution data (prefer svenskaFolket, fallback to betMetrics)
+        let distribution;
+        if (event.svenskaFolket) {
+          distribution = {
+            one: event.svenskaFolket.one,
+            x: event.svenskaFolket.x,
+            two: event.svenskaFolket.two,
+          };
+        } else if (event.betMetrics?.values) {
+          // Extract from betMetrics if svenskaFolket not available
+          const values = event.betMetrics.values;
+          const outcome1 = values.find((v: any) => v.outcome === "1");
+          const outcomeX = values.find((v: any) => v.outcome === "X");
+          const outcome2 = values.find((v: any) => v.outcome === "2");
+
+          if (outcome1 && outcomeX && outcome2) {
+            distribution = {
+              one: outcome1.distribution.distribution,
+              x: outcomeX.distribution.distribution,
+              two: outcome2.distribution.distribution,
+            };
+          }
+        }
+
+        return {
+          eventNumber: event.eventNumber,
+          eventDescription: event.eventDescription,
+          home: event.match.participants.find((p: any) => p.type === "home")?.name || "",
+          away: event.match.participants.find((p: any) => p.type === "away")?.name || "",
+          matchStart: event.match.matchStart,
+          distribution,
+        };
+      })
       .sort((a: StryktipsetMatch, b: StryktipsetMatch) => a.eventNumber - b.eventNumber);
 
     // Extract week number from close time
