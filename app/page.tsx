@@ -43,7 +43,7 @@ export default function Home() {
                   <Step
                       icon={<Target className="h-4 w-4"/>}
                       title="Skapa ett rum"
-                      description="Bestäm målkostnad och matcher"
+                      description="Bestäm målkostnad för veckans matcher"
                   />
                   <Step
                       icon={<Users className="h-4 w-4"/>}

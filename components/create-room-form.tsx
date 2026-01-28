@@ -1,13 +1,13 @@
 "use client";
 
-import React, {useState} from "react"
+import React, {useState, useEffect} from "react"
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {MatchEditor} from "@/components/match-editor";
 import type {Match, Room} from "@/lib/types";
-import {ArrowRight, Check, Copy, Sparkles} from "lucide-react";
+import {ArrowRight, Check, Copy, Sparkles, Loader2} from "lucide-react";
+import {fetchCurrentStryktipsetDraw} from "@/lib/stryktipset-api";
 
 interface CreateRoomFormProps {
   onRoomCreated: (room: Room) => void;
@@ -16,24 +16,56 @@ interface CreateRoomFormProps {
 export function CreateRoomForm({onRoomCreated}: CreateRoomFormProps) {
   const [roomName, setRoomName] = useState("");
   const [targetCost, setTargetCost] = useState("")
-  const [matches, setMatches] = useState<Match[]>(() => {
-    // Initialize with 13 empty matches (standard Stryktipset)
-    return Array.from({length: 13}, (_, i) => ({
-      id: `match-${i + 1}`,
-      teamA: "",
-      teamB: "",
-    }));
-  });
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [weekNumber, setWeekNumber] = useState<number>(0);
   const [createdRoom, setCreatedRoom] = useState<Room | null>(null);
   const [copied, setCopied] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch matches from API on mount
+  useEffect(() => {
+    const loadMatches = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const draw = await fetchCurrentStryktipsetDraw();
+
+        if (!draw) {
+          setError("Kunde inte hämta matcher från Stryktipset. Försök igen senare.");
+          return;
+        }
+
+        if (draw.matches.length !== 13) {
+          setError(`Fel antal matcher (${draw.matches.length}). Stryktipset ska ha 13 matcher.`);
+          return;
+        }
+
+        // Convert API format to Match format
+        const loadedMatches: Match[] = draw.matches.map((match) => ({
+          id: `match-${match.eventNumber}`,
+          teamA: match.home,
+          teamB: match.away,
+        }));
+
+        setMatches(loadedMatches);
+        setWeekNumber(draw.weekNumber);
+      } catch (err: any) {
+        console.error("Error loading matches:", err);
+        setError("Kunde inte hämta matcher från Stryktipset. Försök igen senare.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadMatches();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check that all matches are filled in
-    const allMatchesFilled = matches.every(m => m.teamA.trim() && m.teamB.trim());
     const targetCostNumber = Number(targetCost);
 
     if (!roomName.trim()) {
@@ -46,8 +78,8 @@ export function CreateRoomForm({onRoomCreated}: CreateRoomFormProps) {
       return;
     }
 
-    if (!allMatchesFilled) {
-      setError("Fyll i alla matcher");
+    if (matches.length !== 13) {
+      setError("Matcher är inte laddade. Försök igen.");
       return;
     }
 
@@ -158,6 +190,45 @@ export function CreateRoomForm({onRoomCreated}: CreateRoomFormProps) {
     );
   }
 
+  if (isLoading) {
+    return (
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="text-2xl text-foreground flex items-center gap-2">
+            Skapa rum
+          </CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Sätt upp ett nytt spelrum för er grupp
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Hämtar matcher från Stryktipset...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error && matches.length === 0) {
+    return (
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="text-2xl text-foreground flex items-center gap-2">
+            Skapa rum
+          </CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Sätt upp ett nytt spelrum för er grupp
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm text-center max-w-md">
+            {error}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
       <Card className="bg-card border-border">
         <CardHeader>
@@ -201,13 +272,30 @@ export function CreateRoomForm({onRoomCreated}: CreateRoomFormProps) {
               </p>
             </div>
 
-
             <div className="space-y-2">
-              <Label className="text-foreground">Matcher (13 st)</Label>
+              <Label className="text-foreground">Matcher från Stryktipset vecka {weekNumber}</Label>
               <p className="text-sm text-muted-foreground mb-3">
-                Fyll i hemmalag och bortalag för alla matcher
+                Matcherna hämtas automatiskt från Svenska Spel
               </p>
-              <MatchEditor matches={matches} onChange={setMatches}/>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {matches.map((match, index) => (
+                  <div
+                    key={match.id}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 border border-border"
+                  >
+                    <span className="text-sm font-medium text-muted-foreground w-6">
+                      {index + 1}.
+                    </span>
+                    <span className="flex-1 text-sm text-foreground">
+                      {match.teamA}
+                    </span>
+                    <span className="text-muted-foreground text-sm">vs</span>
+                    <span className="flex-1 text-sm text-foreground text-right">
+                      {match.teamB}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {error && (
@@ -230,7 +318,7 @@ export function CreateRoomForm({onRoomCreated}: CreateRoomFormProps) {
               ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4"/>
-                    Skapa rum
+                    Skapa rum för Stryktipset vecka {weekNumber}
                   </>
               )}
             </Button>
