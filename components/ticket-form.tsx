@@ -124,36 +124,36 @@ export function TicketForm({room, onSubmit, drawState = "Open"}: TicketFormProps
   // If user has already submitted, show confirmation message
   if (hasSubmitted) {
     return (
-      <Card className="bg-card border-primary/30 shadow-lg shadow-primary/10">
-        <CardHeader>
-          <CardTitle className="text-xl text-foreground flex items-center gap-2">
-            <CheckCircle2 className="h-6 w-6 text-primary" />
-            Kupong inskickad
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Du har redan skickat in din kupong till detta rum
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="p-4 rounded-xl bg-primary/10 border border-primary/30">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Ditt namn</span>
-              <span className="font-semibold text-foreground">{userTicket!.playerName}</span>
+        <Card className="bg-card border-primary/30 shadow-lg shadow-primary/10">
+          <CardHeader>
+            <CardTitle className="text-xl text-foreground flex items-center gap-2">
+              <CheckCircle2 className="h-6 w-6 text-primary"/>
+              Kupong inskickad
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Du har redan skickat in din kupong till detta rum
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 rounded-xl bg-primary/10 border border-primary/30">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Ditt namn</span>
+                <span className="font-semibold text-foreground">{userTicket!.playerName}</span>
+              </div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Rader</span>
+                <span className="font-semibold text-foreground">{userTicket!.combinations}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Kostnad</span>
+                <span className="font-semibold text-primary">{userTicket!.cost} kr</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Rader</span>
-              <span className="font-semibold text-foreground">{userTicket!.combinations}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Kostnad</span>
-              <span className="font-semibold text-primary">{userTicket!.cost} kr</span>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground text-center">
-            Du kan se din kupong i listan under "Inskickade kuponger" till höger.
-          </p>
-        </CardContent>
-      </Card>
+            <p className="text-sm text-muted-foreground text-center">
+              Du kan se din kupong i listan under "Inskickade kuponger" till höger.
+            </p>
+          </CardContent>
+        </Card>
     );
   }
 
@@ -164,17 +164,18 @@ export function TicketForm({room, onSubmit, drawState = "Open"}: TicketFormProps
             Din kupong
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Fyll i dina val för varje match
+            Fyll i dina val för varje match. Statistiken visar vad svenska folket har spelat.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {!isDrawOpen && (
-            <div className="mb-6 flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive">
-              <AlertCircle className="h-4 w-4 shrink-0"/>
-              <p className="text-sm">
-                Stryktipset är stängt. Du kan inte längre skicka in kuponger.
-              </p>
-            </div>
+              <div
+                  className="mb-6 flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive">
+                <AlertCircle className="h-4 w-4 shrink-0"/>
+                <p className="text-sm">
+                  Stryktipset är stängt. Du kan inte längre skicka in kuponger.
+                </p>
+              </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
