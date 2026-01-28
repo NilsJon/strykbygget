@@ -8,6 +8,38 @@ import {
 } from "@/lib/tipsLogic";
 import type { Outcome } from "@/lib/types";
 
+/**
+ * Checks if the current Stryktipset draw is open
+ */
+async function isDrawOpen(): Promise<boolean> {
+  try {
+    const response = await fetch(
+      "https://api.spela.svenskaspel.se/draw/1/stryktipset/draws",
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+
+    if (!data.draws || data.draws.length === 0) {
+      return false;
+    }
+
+    // Get the first open draw
+    const currentDraw = data.draws.find((draw: any) => draw.drawState === "Open");
+
+    return !!currentDraw;
+  } catch (error) {
+    console.error("Error checking draw state:", error);
+    return false;
+  }
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ roomId: string }> }
@@ -35,6 +67,15 @@ export async function POST(
     if (!clientId || typeof clientId !== "string") {
       return NextResponse.json(
         { error: "Client ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if draw is open (server-side validation)
+    const drawIsOpen = await isDrawOpen();
+    if (!drawIsOpen) {
+      return NextResponse.json(
+        { error: "Stryktipset är stängt. Du kan inte längre skicka in kuponger." },
         { status: 400 }
       );
     }

@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 interface RoomViewProps {
   room: Room;
   onBack: () => void;
+  drawState?: string;
 }
 
-export function RoomView({ room, onBack }: RoomViewProps) {
+export function RoomView({ room, onBack, drawState = "Open" }: RoomViewProps) {
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,7 +56,7 @@ export function RoomView({ room, onBack }: RoomViewProps) {
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Left column - Ticket form */}
           <div>
-            <TicketForm room={room} />
+            <TicketForm room={room} drawState={drawState} />
           </div>
 
           {/* Right column - Submitted tickets */}

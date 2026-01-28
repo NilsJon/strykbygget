@@ -14,9 +14,10 @@ import {cn, getClientId} from "@/lib/utils";
 interface TicketFormProps {
   room: Room;
   onSubmit?: (playerName: string, selections: TicketSelection[]) => void;
+  drawState?: string;
 }
 
-export function TicketForm({room, onSubmit}: TicketFormProps) {
+export function TicketForm({room, onSubmit, drawState = "Open"}: TicketFormProps) {
   // Check if user has already submitted
   const userTicket = room.tickets.find((ticket) => ticket.isYours);
   const hasSubmitted = !!userTicket;
@@ -47,7 +48,8 @@ export function TicketForm({room, onSubmit}: TicketFormProps) {
 
   const cost = calculateCost(combinations);
   const costMatchesTarget = cost === room.targetCost;
-  const isValid = playerName.trim() && combinations > 0 && costMatchesTarget;
+  const isDrawOpen = drawState === "Open";
+  const isValid = playerName.trim() && combinations > 0 && costMatchesTarget && isDrawOpen;
 
   const handleOutcomeChange = (matchId: string, outcomes: Outcome[]) => {
     setSelections(prev => ({
@@ -166,6 +168,14 @@ export function TicketForm({room, onSubmit}: TicketFormProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {!isDrawOpen && (
+            <div className="mb-6 flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0"/>
+              <p className="text-sm">
+                Stryktipset är stängt. Du kan inte längre skicka in kuponger.
+              </p>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="playerName" className="text-foreground">Ditt namn</Label>
@@ -176,6 +186,7 @@ export function TicketForm({room, onSubmit}: TicketFormProps) {
                   placeholder="Ange ditt namn"
                   className="bg-input border-border"
                   required
+                  disabled={!isDrawOpen}
               />
             </div>
 
@@ -202,6 +213,7 @@ export function TicketForm({room, onSubmit}: TicketFormProps) {
                         selected={selections[match.id] || []}
                         onChange={(outcomes) => handleOutcomeChange(match.id, outcomes)}
                         distribution={match.distribution}
+                        disabled={!isDrawOpen}
                     />
                   </div>
               ))}

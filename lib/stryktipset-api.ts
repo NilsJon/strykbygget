@@ -19,6 +19,7 @@ export interface StryktipsetDraw {
   drawNumber: number;
   weekNumber: number;
   regCloseTime: string;
+  drawState: string;
   matches: StryktipsetMatch[];
 }
 

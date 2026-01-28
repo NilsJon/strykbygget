@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { RoomView } from "@/components/room-view";
-import type { Room, Match, Ticket, TicketSelection } from "@/lib/types";
-import { Loader2 } from "lucide-react";
-import { getClientId } from "@/lib/utils";
-import { fetchCurrentStryktipsetDraw } from "@/lib/stryktipset-api";
+import {useEffect, useState} from "react";
+import {useParams, useRouter} from "next/navigation";
+import {RoomView} from "@/components/room-view";
+import type {Match, Room, Ticket, TicketSelection} from "@/lib/types";
+import {Loader2} from "lucide-react";
+import {getClientId} from "@/lib/utils";
+import {fetchCurrentStryktipsetDraw} from "@/lib/stryktipset-api";
 
 // API response types matching Firestore structure
 interface FirestoreMatch {
@@ -42,6 +42,7 @@ export default function RoomPage() {
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [drawState, setDrawState] = useState<string>("Open");
 
   useEffect(() => {
     if (!roomId) return;
@@ -71,6 +72,9 @@ export default function RoomPage() {
         // Create a map of fresh distribution data by team names
         const distributionMap = new Map<string, { one: string; x: string; two: string }>();
         if (currentDraw) {
+          // Update draw state
+          setDrawState(currentDraw.drawState);
+
           currentDraw.matches.forEach((match) => {
             if (match.distribution) {
               // Use home-away team combo as key
@@ -93,10 +97,10 @@ export default function RoomPage() {
 
         const tickets: Ticket[] = data.tickets.map((ticket) => {
           const selections: TicketSelection[] = ticket.selections.map(
-            (outcomes, index) => ({
-              matchId: `match-${index}`,
-              outcomes,
-            })
+              (outcomes, index) => ({
+                matchId: `match-${index}`,
+                outcomes,
+              })
           );
 
           return {
@@ -130,8 +134,8 @@ export default function RoomPage() {
 
     fetchRoom();
 
-    // Poll for updates every 5 seconds
-    const interval = setInterval(fetchRoom, 5000);
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchRoom, 30000);
 
     return () => clearInterval(interval);
   }, [roomId]);
@@ -142,35 +146,35 @@ export default function RoomPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
-          <p className="text-muted-foreground">Laddar rum...</p>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4"/>
+            <p className="text-muted-foreground">Laddar rum...</p>
+          </div>
         </div>
-      </div>
     );
   }
 
   if (error || !room) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <h1 className="text-2xl font-bold text-foreground mb-2">
-            {error || "Rummet hittades inte"}
-          </h1>
-          <p className="text-muted-foreground mb-6">
-            Detta rum kanske inte finns eller så uppstod ett fel vid laddning.
-          </p>
-          <button
-            onClick={handleBack}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-          >
-            Tillbaka till start
-          </button>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center max-w-md mx-auto px-4">
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              {error || "Rummet hittades inte"}
+            </h1>
+            <p className="text-muted-foreground mb-6">
+              Detta rum kanske inte finns eller så uppstod ett fel vid laddning.
+            </p>
+            <button
+                onClick={handleBack}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+            >
+              Tillbaka till start
+            </button>
+          </div>
         </div>
-      </div>
     );
   }
 
-  return <RoomView room={room} onBack={handleBack} />;
+  return <RoomView room={room} onBack={handleBack} drawState={drawState}/>;
 }

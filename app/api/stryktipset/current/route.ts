@@ -17,6 +17,7 @@ export interface StryktipsetDraw {
   drawNumber: number;
   weekNumber: number;
   regCloseTime: string;
+  drawState: string;
   matches: StryktipsetMatch[];
 }
 
@@ -119,6 +120,7 @@ export async function GET() {
       drawNumber: currentDraw.drawNumber,
       weekNumber,
       regCloseTime: currentDraw.regCloseTime,
+      drawState: currentDraw.drawState,
       matches,
     };
 
