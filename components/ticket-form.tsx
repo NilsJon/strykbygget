@@ -196,7 +196,7 @@ export function TicketForm({room, onSubmit, drawState = "Open"}: TicketFormProps
               {room.matches.map((match, index) => (
                   <div
                       key={match.id}
-                      className="flex items-center justify-between p-4 rounded-xl bg-secondary/30 border border-border"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-secondary/30 border border-border"
                   >
                     <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-muted-foreground w-6">
@@ -209,13 +209,15 @@ export function TicketForm({room, onSubmit, drawState = "Open"}: TicketFormProps
                         </p>
                       </div>
                     </div>
-                    <OutcomeSelector
-                        matchId={match.id}
-                        selected={selections[match.id] || []}
-                        onChange={(outcomes) => handleOutcomeChange(match.id, outcomes)}
-                        distribution={match.distribution}
-                        disabled={!isDrawOpen}
-                    />
+                    <div className="flex justify-center sm:block">
+                      <OutcomeSelector
+                          matchId={match.id}
+                          selected={selections[match.id] || []}
+                          onChange={(outcomes) => handleOutcomeChange(match.id, outcomes)}
+                          distribution={match.distribution}
+                          disabled={!isDrawOpen}
+                      />
+                    </div>
                   </div>
               ))}
             </div>
