@@ -63,7 +63,11 @@ export function RoomView({room, onBack, drawState = "Open"}: RoomViewProps) {
 
             {/* Right column - Submitted tickets */}
             <div className="space-y-8">
-              <SubmittedTickets tickets={room.tickets} matches={room.matches}/>
+              <SubmittedTickets
+                  tickets={room.tickets}
+                  matches={room.matches}
+                  drawNumber={room.drawNumber}
+              />
             </div>
           </div>
 

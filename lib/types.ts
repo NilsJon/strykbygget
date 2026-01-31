@@ -33,6 +33,7 @@ export interface Room {
   matches: Match[];
   tickets: Ticket[];
   createdAt: Date;
+  drawNumber?: number; // Optional: used for fetching live results
 }
 
 export function calculateCombinations(selections: TicketSelection[]): number {

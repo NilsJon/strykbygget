@@ -1,26 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Ticket, Outcome, Room } from "@/lib/types";
-import { User, Eye, Trophy, Medal } from "lucide-react";
+import { User, Eye, Trophy, Medal, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLiveResults } from "@/hooks/use-live-results";
+import type { DrawResult } from "@/lib/stryktipset-api";
 
 interface SubmittedTicketsProps {
   tickets: Ticket[];
   matches: Room["matches"];
+  drawNumber?: number;
 }
 
-export function SubmittedTickets({ tickets, matches }: SubmittedTicketsProps) {
+export function SubmittedTickets({ tickets, matches, drawNumber }: SubmittedTicketsProps) {
   const [viewingTicket, setViewingTicket] = useState<Ticket | null>(null);
 
-  // Sort tickets by score (descending). For now all scores are 0.
-  const sortedTickets = [...tickets].map((ticket) => ({
-    ticket,
-    score: 0, // Hardcoded - will be calculated from API results in future
-  })).sort((a, b) => b.score - a.score);
+  // Debug: Log drawNumber to console
+  if (typeof window !== "undefined") {
+    console.log(`[SubmittedTickets] drawNumber:`, drawNumber);
+  }
+
+  // Fetch live results every 30 seconds
+  const { results, isLoading, error } = useLiveResults(drawNumber ?? null);
+
+  // Calculate score for a ticket based on live results
+  const calculateScore = (ticket: Ticket, liveResults: DrawResult[]): number => {
+    if (liveResults.length === 0) return 0;
+
+    let score = 0;
+    ticket.selections.forEach((selection, index) => {
+      const actualResult = liveResults[index];
+      // If the actual result is in the user's selected outcomes, +1 point
+      if (actualResult && actualResult.outcome && selection.outcomes.includes(actualResult.outcome)) {
+        score++;
+      }
+    });
+    return score;
+  };
+
+  // Sort tickets by score (descending)
+  const sortedTickets = useMemo(() => {
+    return [...tickets].map((ticket) => ({
+      ticket,
+      score: calculateScore(ticket, results),
+    })).sort((a, b) => b.score - a.score);
+  }, [tickets, results]);
 
   if (tickets.length === 0) {
     return (
@@ -46,13 +74,41 @@ export function SubmittedTickets({ tickets, matches }: SubmittedTicketsProps) {
   return (
     <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="text-xl text-foreground flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-yellow-500" />
-          Resultattavla
-        </CardTitle>
-        <CardDescription className="text-muted-foreground">
-          {tickets.length} {tickets.length === 1 ? "deltagare" : "deltagare"}
-        </CardDescription>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-xl text-foreground flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-yellow-500" />
+              Resultattavla
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              {tickets.length} {tickets.length === 1 ? "deltagare" : "deltagare"}
+            </CardDescription>
+          </div>
+          {drawNumber && (
+            <div className="flex items-center gap-2 text-xs">
+              {error ? (
+                <div className="flex items-center gap-1 text-yellow-600" title={error}>
+                  <div className="h-2 w-2 rounded-full bg-yellow-600" />
+                  <span>Resultat ej tillgängliga</span>
+                </div>
+              ) : isLoading ? (
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                  <span>Uppdaterar...</span>
+                </div>
+              ) : results.length > 0 ? (
+                <div className="flex items-center gap-1 text-green-600">
+                  <div className="h-2 w-2 rounded-full bg-green-600 animate-pulse" />
+                  <span>Live resultat</span>
+                </div>
+              ) : (
+                <div className="text-muted-foreground">
+                  Väntar på resultat
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">

@@ -18,6 +18,7 @@ export function CreateRoomForm({onRoomCreated}: CreateRoomFormProps) {
   const [targetCost, setTargetCost] = useState("")
   const [matches, setMatches] = useState<Match[]>([]);
   const [weekNumber, setWeekNumber] = useState<number>(0);
+  const [drawNumber, setDrawNumber] = useState<number>(0);
   const [createdRoom, setCreatedRoom] = useState<Room | null>(null);
   const [copied, setCopied] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -53,6 +54,7 @@ export function CreateRoomForm({onRoomCreated}: CreateRoomFormProps) {
 
         setMatches(loadedMatches);
         setWeekNumber(draw.weekNumber);
+        setDrawNumber(draw.drawNumber);
       } catch (err: any) {
         console.error("Error loading matches:", err);
         setError("Kunde inte hämta matcher från Stryktipset. Försök igen senare.");
@@ -104,6 +106,7 @@ export function CreateRoomForm({onRoomCreated}: CreateRoomFormProps) {
           title: roomName.trim(),
           targetCost: targetCostNumber,
           matches: firestoreMatches,
+          drawNumber,
         }),
       });
 
@@ -122,6 +125,7 @@ export function CreateRoomForm({onRoomCreated}: CreateRoomFormProps) {
         matches,
         tickets: [],
         createdAt: new Date(data.createdAt),
+        drawNumber,
       };
 
       setCreatedRoom(room);

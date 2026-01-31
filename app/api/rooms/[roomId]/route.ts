@@ -61,6 +61,7 @@ export async function GET(
       status: roomData.status,
       matches: roomData.matches,
       createdAt: roomData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      drawNumber: roomData.drawNumber,
       tickets,
     });
   } catch (error: any) {

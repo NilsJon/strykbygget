@@ -32,6 +32,7 @@ interface FirestoreRoom {
   matches: FirestoreMatch[];
   createdAt: string;
   tickets: FirestoreTicket[];
+  drawNumber?: number;
 }
 
 export default function RoomPage() {
@@ -121,6 +122,7 @@ export default function RoomPage() {
           matches,
           tickets,
           createdAt: new Date(data.createdAt),
+          drawNumber: data.drawNumber,
         };
 
         setRoom(convertedRoom);

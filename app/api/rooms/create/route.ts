@@ -5,7 +5,7 @@ import { FieldValue } from "firebase-admin/firestore";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, targetCost, matches } = body;
+    const { title, targetCost, matches, drawNumber } = body;
 
     // Validate required fields
     if (!title || typeof title !== "string") {
@@ -52,6 +52,7 @@ export async function POST(request: Request) {
       status: "open",
       targetCost,
       matches: firestoreMatches,
+      drawNumber: drawNumber || null,
     };
 
     await roomRef.set(roomData);
