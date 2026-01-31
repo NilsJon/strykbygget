@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { fetchDrawForecast, type DrawResult } from "@/lib/stryktipset-api";
+import { fetchDrawForecast, type ProcessedDrawResult } from "@/lib/stryktipset-api";
 
 export function useLiveResults(drawNumber: number | null) {
-  const [results, setResults] = useState<DrawResult[]>([]);
+  const [results, setResults] = useState<ProcessedDrawResult[]>([]);
+  const [roundStarted, setRoundStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -10,6 +11,7 @@ export function useLiveResults(drawNumber: number | null) {
     if (!drawNumber) {
       setIsLoading(false);
       setResults([]);
+      setRoundStarted(false);
       setError(null);
       return;
     }
@@ -18,25 +20,24 @@ export function useLiveResults(drawNumber: number | null) {
 
     const fetchResults = async () => {
       try {
-        console.log(`[useLiveResults] Fetching results for draw ${drawNumber}`);
-        const forecast = await fetchDrawForecast(drawNumber);
+        const data = await fetchDrawForecast(drawNumber);
 
         if (!isMounted) return;
 
-        if (forecast && forecast.forecastResult) {
-          console.log(`[useLiveResults] Got ${forecast.forecastResult.drawResults.length} results`);
-          setResults(forecast.forecastResult.drawResults);
+        if (data) {
+          setResults(data.results);
+          setRoundStarted(data.roundStarted);
           setError(null);
         } else {
-          console.warn(`[useLiveResults] No forecast data returned for draw ${drawNumber}`);
           setError("Could not fetch results");
           setResults([]);
+          setRoundStarted(false);
         }
       } catch (err) {
         if (!isMounted) return;
-        console.error(`[useLiveResults] Error fetching draw ${drawNumber}:`, err);
         setError(err instanceof Error ? err.message : "Unknown error");
         setResults([]);
+        setRoundStarted(false);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -56,5 +57,5 @@ export function useLiveResults(drawNumber: number | null) {
     };
   }, [drawNumber]);
 
-  return { results, isLoading, error };
+  return { results, roundStarted, isLoading, error };
 }

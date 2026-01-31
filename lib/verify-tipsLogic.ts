@@ -13,47 +13,31 @@ const matches: Match[] = [
   { id: "4", teamA: "Team A4", teamB: "Team B4" },
 ];
 
-function testCase(name: string, tickets: Ticket[], targetCost: number, expectedCost: number | null) {
-  console.log(`\n🧪 Test: ${name}`);
-  console.log(`   Target cost: ${targetCost} kr`);
-
+function testCase(_name: string, tickets: Ticket[], targetCost: number, expectedCost: number | null) {
   const result = generateFinalTicket(matches, tickets, targetCost);
 
   if (expectedCost === null) {
     if (result === null) {
-      console.log("   ✅ Correctly returned null (invalid target cost)");
+      // Test passed
     } else {
-      console.log("   ❌ Expected null but got a result");
-      console.log("   Result:", result);
+      // Test failed
     }
     return;
   }
 
   if (!result) {
-    console.log("   ❌ Expected a result but got null");
+    // Test failed
     return;
   }
 
   const actualCost = calculateCombinationsFromArray(result.map((s) => s.outcomes));
 
   if (actualCost === expectedCost) {
-    console.log(`   ✅ Cost matches exactly: ${actualCost} kr`);
+    // Test passed
   } else {
-    console.log(`   ❌ Cost mismatch: expected ${expectedCost} kr, got ${actualCost} kr`);
+    // Test failed
   }
-
-  console.log("   Match picks:");
-  result.forEach((selection, idx) => {
-    const match = matches[idx];
-    console.log(
-      `     ${idx + 1}. ${match.teamA} vs ${match.teamB}: ${selection.outcomes.join("")} (${selection.outcomes.length} picks)`
-    );
-  });
 }
-
-console.log("=".repeat(60));
-console.log("Final Ticket Generation - Verification");
-console.log("=".repeat(60));
 
 // Test 1: Target cost = 1 (single pick per match)
 testCase(
@@ -238,7 +222,3 @@ testCase(
   12,
   12
 );
-
-console.log("\n" + "=".repeat(60));
-console.log("Verification complete!");
-console.log("=".repeat(60));

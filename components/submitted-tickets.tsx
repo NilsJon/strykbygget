@@ -8,7 +8,7 @@ import type { Ticket, Outcome, Room } from "@/lib/types";
 import { User, Eye, Trophy, Medal, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLiveResults } from "@/hooks/use-live-results";
-import type { DrawResult } from "@/lib/stryktipset-api";
+import type { ProcessedDrawResult } from "@/lib/stryktipset-api";
 
 interface SubmittedTicketsProps {
   tickets: Ticket[];
@@ -19,23 +19,27 @@ interface SubmittedTicketsProps {
 export function SubmittedTickets({ tickets, matches, drawNumber }: SubmittedTicketsProps) {
   const [viewingTicket, setViewingTicket] = useState<Ticket | null>(null);
 
-  // Debug: Log drawNumber to console
-  if (typeof window !== "undefined") {
-    console.log(`[SubmittedTickets] drawNumber:`, drawNumber);
-  }
-
   // Fetch live results every 30 seconds
-  const { results, isLoading, error } = useLiveResults(drawNumber ?? null);
+  const { results, roundStarted, isLoading, error } = useLiveResults(drawNumber ?? null);
 
   // Calculate score for a ticket based on live results
-  const calculateScore = (ticket: Ticket, liveResults: DrawResult[]): number => {
+  const calculateScore = (ticket: Ticket, liveResults: ProcessedDrawResult[], hasRoundStarted: boolean): number => {
+    // If round hasn't started, everyone has 0 points
+    if (!hasRoundStarted) return 0;
+
     if (liveResults.length === 0) return 0;
 
     let score = 0;
     ticket.selections.forEach((selection, index) => {
-      const actualResult = liveResults[index];
-      // If the actual result is in the user's selected outcomes, +1 point
-      if (actualResult && actualResult.outcome && selection.outcomes.includes(actualResult.outcome)) {
+      const matchResult = liveResults[index];
+      if (!matchResult) return;
+
+      // Determine the outcome for this match
+      // If outcome is null (game hasn't started), treat as 0-0 which is "X"
+      const actualOutcome = matchResult.outcome ?? "X";
+
+      // If the actual outcome is in the user's selected outcomes, +1 point
+      if (selection.outcomes.includes(actualOutcome)) {
         score++;
       }
     });
@@ -46,9 +50,9 @@ export function SubmittedTickets({ tickets, matches, drawNumber }: SubmittedTick
   const sortedTickets = useMemo(() => {
     return [...tickets].map((ticket) => ({
       ticket,
-      score: calculateScore(ticket, results),
+      score: calculateScore(ticket, results, roundStarted),
     })).sort((a, b) => b.score - a.score);
-  }, [tickets, results]);
+  }, [tickets, results, roundStarted]);
 
   if (tickets.length === 0) {
     return (
@@ -96,7 +100,12 @@ export function SubmittedTickets({ tickets, matches, drawNumber }: SubmittedTick
                   <RefreshCw className="h-3 w-3 animate-spin" />
                   <span>Uppdaterar...</span>
                 </div>
-              ) : results.length > 0 ? (
+              ) : !roundStarted && results.length > 0 ? (
+                <div className="flex items-center gap-1 text-blue-600">
+                  <div className="h-2 w-2 rounded-full bg-blue-600" />
+                  <span>Omgången ej startad</span>
+                </div>
+              ) : roundStarted && results.length > 0 ? (
                 <div className="flex items-center gap-1 text-green-600">
                   <div className="h-2 w-2 rounded-full bg-green-600 animate-pulse" />
                   <span>Live resultat</span>
@@ -131,8 +140,11 @@ export function SubmittedTickets({ tickets, matches, drawNumber }: SubmittedTick
                   isThird && "shadow-sm"
                 )}
                 style={{
+                  animationName: "fadeIn",
+                  animationDuration: "0.3s",
+                  animationTimingFunction: "ease-out",
+                  animationFillMode: "forwards",
                   animationDelay: `${index * 100}ms`,
-                  animation: "fadeIn 0.3s ease-out forwards"
                 }}
               >
                 <div className="flex items-center gap-3">

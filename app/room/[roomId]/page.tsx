@@ -6,7 +6,7 @@ import {RoomView} from "@/components/room-view";
 import type {Match, Room, Ticket, TicketSelection} from "@/lib/types";
 import {Loader2} from "lucide-react";
 import {getClientId} from "@/lib/utils";
-import {fetchCurrentStryktipsetDraw} from "@/lib/stryktipset-api";
+import {fetchSpecificDraw} from "@/lib/stryktipset-api";
 
 // API response types matching Firestore structure
 interface FirestoreMatch {
@@ -52,11 +52,8 @@ export default function RoomPage() {
       try {
         const clientId = getClientId();
 
-        // Fetch room data and fresh distribution in parallel
-        const [roomResponse, currentDraw] = await Promise.all([
-          fetch(`/api/rooms/${roomId}?clientId=${encodeURIComponent(clientId)}`),
-          fetchCurrentStryktipsetDraw(),
-        ]);
+        // Fetch room data first
+        const roomResponse = await fetch(`/api/rooms/${roomId}?clientId=${encodeURIComponent(clientId)}`);
 
         if (!roomResponse.ok) {
           if (roomResponse.status === 404) {
@@ -70,29 +67,27 @@ export default function RoomPage() {
 
         const data: FirestoreRoom = await roomResponse.json();
 
-        // Create a map of fresh distribution data by team names
-        const distributionMap = new Map<string, { one: string; x: string; two: string }>();
-        if (currentDraw) {
-          // Update draw state
-          setDrawState(currentDraw.drawState);
-
-          currentDraw.matches.forEach((match) => {
-            if (match.distribution) {
-              // Use home-away team combo as key
-              const key = `${match.home}-${match.away}`;
-              distributionMap.set(key, match.distribution);
-            }
-          });
+        // If room has a drawNumber, fetch the specific draw instead of current
+        let drawData = null;
+        if (data.drawNumber) {
+          drawData = await fetchSpecificDraw(data.drawNumber);
+          if (drawData) {
+            setDrawState(drawData.drawState);
+          }
         }
 
-        // Convert Firestore format to UI format with fresh distribution
+        // Convert Firestore format to UI format with fresh distribution from draw data
         const matches: Match[] = data.matches.map((match, index) => {
-          const key = `${match.home}-${match.away}`;
+          // Try to find matching draw event by team names
+          const drawMatch = drawData?.matches.find(
+            (m) => m.home === match.home && m.away === match.away
+          );
+
           return {
             id: `match-${index}`,
             teamA: match.home,
             teamB: match.away,
-            distribution: distributionMap.get(key),
+            distribution: drawMatch?.distribution,
           };
         });
 

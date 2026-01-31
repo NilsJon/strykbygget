@@ -68,18 +68,6 @@ export function FinalResult({room}: FinalResultProps) {
         ticket.map((s) => s.outcomes)
     );
 
-    // Debug log to verify cost
-    if (typeof window !== "undefined") {
-      console.log("[Final Ticket Debug]", {
-        targetCost: room.targetCost,
-        actualCost: combinations,
-        matches: ticket.map((s) => ({
-          matchId: s.matchId,
-          picks: s.outcomes.length,
-          outcomes: s.outcomes,
-        })),
-      });
-    }
 
     return {
       selections: ticket,
